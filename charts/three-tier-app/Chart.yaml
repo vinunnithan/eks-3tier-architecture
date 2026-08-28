@@ -1,0 +1,22 @@
+apiVersion: v2
+name: three-tier-app
+description: Parent Helm chart for a governed, secure three-tier application (frontend, backend, MySQL)
+type: application
+version: 0.1.0
+appVersion: "1.0"
+
+dependencies:
+  - name: frontend
+    version: "0.1.0"
+    repository: "file://charts/frontend"
+    condition: frontend.enabled
+
+  - name: backend
+    version: "0.1.0"
+    repository: "file://charts/backend"
+    condition: backend.enabled
+
+  - name: database
+    version: "0.1.0"
+    repository: "file://charts/database"
+    condition: database.enabled

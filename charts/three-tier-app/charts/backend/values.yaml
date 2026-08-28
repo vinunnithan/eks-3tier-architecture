@@ -1,0 +1,29 @@
+image:
+  repository: 231733667519.dkr.ecr.eu-west-1.amazonaws.com/poc2-three-tier-backend
+  tag: "v1"
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  port: 80
+  targetPort: 4000
+
+resources:
+  requests:
+    cpu: "250m"
+    memory: "256Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+aws:
+  region: "eu-west-1"
+  serviceAccountName: "external-secrets"
+  secretName: "poc2/mysql-credentials"
+  clusterSecretStoreName: "aws-secrets-store"
+
+db:
+  host: "release-name-database"
+  port: 3306
+  name: "appdb"

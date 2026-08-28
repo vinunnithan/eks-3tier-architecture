@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "database.fullname" . }}-migration
+  namespace: database
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command:
+            - sh
+            - -c
+            - |
+              until mysql -h {{ include "database.fullname" . }} -u root -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1"; do
+                echo "Waiting for MySQL to be ready..."
+                sleep 5
+              done
+              mysql -h {{ include "database.fullname" . }} -u root -p"$MYSQL_ROOT_PASSWORD" {{ .Values.mysql.database }} -e "
+                CREATE TABLE IF NOT EXISTS transactions (
+                  id INT AUTO_INCREMENT PRIMARY KEY,
+                  amount DECIMAL(10,2),
+                  description VARCHAR(255),
+                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+              "
+          envFrom:
+            - secretRef:
+                name: {{ include "database.fullname" . }}-credentials
+  backoffLimit: 3
