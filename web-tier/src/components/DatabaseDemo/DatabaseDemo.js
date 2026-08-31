@@ -1,7 +1,5 @@
-
-    import React, {Component} from 'react';
+import React, {Component} from 'react';
     import './DatabaseDemo.css';
-
     class DatabaseDemo extends Component {
      
         constructor(props) {
@@ -15,13 +13,15 @@
                text_desc:""
             }
          }
-
+         getApiUrl(path){
+            const basePath = window.location.pathname.split('/')[1];
+            return basePath ? `/${basePath}${path}` : path;
+         }
          componentDidMount() {
             this.populateData();
           }
-
         populateData(){
-            this.fetch_retry('/api/transaction',3)
+            this.fetch_retry(this.getApiUrl('/api/transaction'),3)
             .then(res => res.json())
             .then((data) => {
               this.setState({ transactions : data.result });
@@ -30,7 +30,6 @@
             })
             .catch(console.log);
         }  
-
         async fetch_retry(url, n){
             try {
                 return await fetch(url)
@@ -40,8 +39,6 @@
                 return await this.fetch_retry(url, n - 1);
             }
         };
-
-
           renderTableData() {
             return this.state.transactions.map((transaction, index) => {
                const { id, amount, description} = transaction //destructuring
@@ -54,19 +51,15 @@
                )
             })
          }
-
         handleButtonClickDel(){
            const requestOptions = {
                method: 'DELETE'
            }
-           fetch('/api/transaction', requestOptions)
+           fetch(this.getApiUrl('/api/transaction'), requestOptions)
            .then(response => response.json())
            .then(data => this.populateData())
-
            this.setState({text_amt : "", text_desc:"",transaction:[]});
-
         }
-
          handleButtonClick(){
              console.log(this.state.text_amt);
              console.log(this.state.text_desc);
@@ -76,19 +69,15 @@
                 body: JSON.stringify({"amount":this.state.text_amt, "desc" :this.state.text_desc})
             }
             
-            fetch('/api/transaction', requestOptions)
+            fetch(this.getApiUrl('/api/transaction'), requestOptions)
             .then(response => response.json())
             .then(data => this.populateData())
             
             this.setState({text_amt : "", text_desc:""});
-
          }
-
          handleTextChange(e){
             this.setState({[e.target.name]:e.target.value})
          }
-
-
         render () {
         return (
             <div>
@@ -109,9 +98,7 @@
                </tbody>
             </table>
          </div>
-
         );
       }
     }
-
     export default DatabaseDemo;

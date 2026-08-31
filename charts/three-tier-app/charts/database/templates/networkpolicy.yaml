@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: database-allow-backend-only
-  namespace: database
+  namespace: {{ .Values.global.environment }}
 spec:
   podSelector:
     matchLabels:
@@ -11,16 +11,16 @@ spec:
     - Ingress
   ingress:
     - from:
-        - namespaceSelector:
+        - podSelector:
             matchLabels:
-              kubernetes.io/metadata.name: backend
+              app.kubernetes.io/name: backend
       ports:
         - protocol: TCP
           port: 3306
     - from:
-        - namespaceSelector:
+        - podSelector:
             matchLabels:
-              kubernetes.io/metadata.name: database
+              job-name: {{ printf "%s-database-migration" .Release.Name }}
       ports:
         - protocol: TCP
           port: 3306

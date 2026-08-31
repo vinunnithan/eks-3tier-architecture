@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: three-tier-ingress
-  namespace: frontend
+  namespace: {{ .Values.global.environment }}
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/service-upstream: "true"
@@ -11,17 +11,17 @@ spec:
   rules:
     - http:
         paths:
-          - path: /api(/|$)(.*)
+          - path: /{{ .Values.global.environment }}/api(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
               service:
-                name: backend-proxy
+                name: {{ printf "%s-backend" .Release.Name }}
                 port:
                   number: 80
-          - path: /()(.*)
+          - path: /{{ .Values.global.environment }}(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
               service:
-                name: three-tier-app-frontend
+                name: {{ printf "%s-frontend" .Release.Name }}
                 port:
                   number: 80

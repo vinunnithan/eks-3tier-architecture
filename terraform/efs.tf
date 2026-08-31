@@ -47,10 +47,10 @@ resource "aws_efs_file_system" "mysql_data" {
 }
 
 resource "aws_efs_mount_target" "mysql_data" {
-  for_each = toset(module.vpc.private_subnets)
+  count = length(var.private_subnet_cidrs)
 
   file_system_id  = aws_efs_file_system.mysql_data.id
-  subnet_id       = each.value
+  subnet_id       = module.vpc.private_subnets[count.index]
   security_groups = [aws_security_group.efs.id]
 }
 
@@ -60,6 +60,8 @@ resource "kubernetes_storage_class" "efs" {
   }
 
   storage_provisioner = "efs.csi.aws.com"
+  reclaim_policy          = "Retain"
+  allow_volume_expansion  = true
 
   parameters = {
     provisioningMode = "efs-ap"

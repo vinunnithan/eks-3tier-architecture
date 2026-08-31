@@ -1,0 +1,66 @@
+global:
+  environment: prod
+
+frontend:
+  enabled: true
+  replicaCount: 3
+  image:
+    repository: 231733667519.dkr.ecr.eu-west-1.amazonaws.com/poc2-three-tier-frontend
+    tag: "v2"
+    pullPolicy: IfNotPresent
+  service:
+    port: 80
+    targetPort: 80
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+backend:
+  enabled: true
+  replicaCount: 3
+  image:
+    repository: 231733667519.dkr.ecr.eu-west-1.amazonaws.com/poc2-three-tier-backend
+    tag: "v1"
+    pullPolicy: IfNotPresent
+  service:
+    port: 80
+    targetPort: 4000
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+  db:
+    port: 3306
+    name: "appdb_prod"
+  aws:
+    secretName: "prod/mysql-credentials"
+
+database:
+  enabled: true
+  image:
+    repository: mysql
+    tag: "8.0"
+    pullPolicy: IfNotPresent
+  service:
+    port: 3306
+  storage:
+    storageClassName: efs-sc
+    size: 20Gi
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+  mysql:
+    database: "appdb_prod"
+  aws:
+    secretName: "prod/mysql-credentials"

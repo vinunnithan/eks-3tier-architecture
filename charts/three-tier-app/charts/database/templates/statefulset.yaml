@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ include "database.fullname" . }}
-  namespace: database
+  namespace: {{ .Values.global.environment }}
   labels:
     {{- include "database.labels" . | nindent 4 }}
 

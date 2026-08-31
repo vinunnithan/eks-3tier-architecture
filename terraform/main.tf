@@ -217,7 +217,7 @@ module "eks" {
 
       min_size     = 2
       max_size     = 4
-      desired_size = 2
+      desired_size = 3
 
       subnet_ids = module.vpc.private_subnets
     }
@@ -362,34 +362,14 @@ resource "aws_eks_access_policy_association" "jenkins_admin" {
 }
 
 # ============================================================
-# NAMESPACES
+# NAMESPACES — dev / qa / prod
 # ============================================================
 
-resource "kubernetes_namespace" "frontend" {
+resource "kubernetes_namespace" "environments" {
+  for_each = toset(["dev", "qa", "prod"])
+
   metadata {
-    name = "frontend"
-  }
-
-  depends_on = [
-    module.eks,
-    aws_eks_access_entry.jenkins
-  ]
-}
-
-resource "kubernetes_namespace" "backend" {
-  metadata {
-    name = "backend"
-  }
-
-  depends_on = [
-    module.eks,
-    aws_eks_access_entry.jenkins
-  ]
-}
-
-resource "kubernetes_namespace" "database" {
-  metadata {
-    name = "database"
+    name = each.key
   }
 
   depends_on = [
@@ -510,6 +490,39 @@ resource "kubernetes_annotations" "external_secrets_sa" {
 
   annotations = {
     "eks.amazonaws.com/role-arn" = module.external_secrets_irsa_role.iam_role_arn
+  }
+
+  depends_on = [helm_release.external_secrets]
+}
+
+# ============================================================
+# CLUSTER SECRET STORE — shared across dev/qa/prod
+# ============================================================
+resource "null_resource" "cluster_secret_store" {
+  triggers = {
+    always_run = timestamp()
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}
+      kubectl apply -f - <<EOF
+      apiVersion: external-secrets.io/v1beta1
+      kind: ClusterSecretStore
+      metadata:
+        name: aws-secrets-store
+      spec:
+        provider:
+          aws:
+            service: SecretsManager
+            region: ${var.aws_region}
+            auth:
+              jwt:
+                serviceAccountRef:
+                  name: external-secrets
+                  namespace: external-secrets
+      EOF
+    EOT
   }
 
   depends_on = [helm_release.external_secrets]

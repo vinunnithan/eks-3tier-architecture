@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "backend.fullname" . }}
-  namespace: backend
+  namespace: {{ .Values.global.environment }}
   labels:
     {{- include "backend.labels" . | nindent 4 }}
 spec:
@@ -25,7 +25,7 @@ spec:
 
           env:
             - name: DB_HOST
-              value: {{ printf "%s-database.database.svc.cluster.local" .Release.Name | quote }}
+              value: {{ printf "%s-database" .Release.Name | quote }}
             - name: DB_PORT
               value: {{ .Values.db.port | quote }}
             - name: DB_DATABASE
