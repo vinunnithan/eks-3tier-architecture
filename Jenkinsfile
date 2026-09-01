@@ -71,8 +71,8 @@ pipeline {
                     sh """
                         helm dependency update
                         helm upgrade --install three-tier-app-${ENVIRONMENT} . -f values-${ENVIRONMENT}.yaml \
-                          --set backend.image.tag="\$BUILD_NUMBER" \
-                          --set frontend.image.tag="\$BUILD_NUMBER"
+                          --set-string backend.image.tag=\$BUILD_NUMBER \
+                          --set-string frontend.image.tag=\$BUILD_NUMBER
                     """
                 }
             }
