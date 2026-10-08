@@ -172,12 +172,12 @@ module "vpc" {
   enable_dns_support   = true
 
   public_subnet_tags = {
-    "kubernetes.io/role/elb" = "1"
+    "kubernetes.io/role/elb"                            = "1"
     "kubernetes.io/cluster/${var.project_name}-cluster" = "shared"
   }
 
   private_subnet_tags = {
-    "kubernetes.io/role/internal-elb" = "1"
+    "kubernetes.io/role/internal-elb"                   = "1"
     "kubernetes.io/cluster/${var.project_name}-cluster" = "shared"
   }
 
@@ -207,6 +207,17 @@ module "eks" {
   cluster_endpoint_private_access = true
 
   enable_irsa = true
+  # ---- NEW: allow node-to-node HTTP so the ingress controller can reach the frontend ----
+  node_security_group_additional_rules = {
+    ingress_nodes_http = {
+      description                = "Node to node HTTP (ingress controller to frontend)"
+      protocol                   = "tcp"
+      from_port                  = 80
+      to_port                    = 80
+      type                       = "ingress"
+      source_node_security_group = true
+    }
+  }
 
   eks_managed_node_groups = {
     default = {
@@ -490,39 +501,6 @@ resource "kubernetes_annotations" "external_secrets_sa" {
 
   annotations = {
     "eks.amazonaws.com/role-arn" = module.external_secrets_irsa_role.iam_role_arn
-  }
-
-  depends_on = [helm_release.external_secrets]
-}
-
-# ============================================================
-# CLUSTER SECRET STORE — shared across dev/qa/prod
-# ============================================================
-resource "null_resource" "cluster_secret_store" {
-  triggers = {
-    always_run = timestamp()
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}
-      kubectl apply -f - <<EOF
-      apiVersion: external-secrets.io/v1beta1
-      kind: ClusterSecretStore
-      metadata:
-        name: aws-secrets-store
-      spec:
-        provider:
-          aws:
-            service: SecretsManager
-            region: ${var.aws_region}
-            auth:
-              jwt:
-                serviceAccountRef:
-                  name: external-secrets
-                  namespace: external-secrets
-      EOF
-    EOT
   }
 
   depends_on = [helm_release.external_secrets]

@@ -59,9 +59,9 @@ resource "kubernetes_storage_class" "efs" {
     name = "efs-sc"
   }
 
-  storage_provisioner = "efs.csi.aws.com"
-  reclaim_policy          = "Retain"
-  allow_volume_expansion  = true
+  storage_provisioner    = "efs.csi.aws.com"
+  reclaim_policy         = "Retain"
+  allow_volume_expansion = true
 
   parameters = {
     provisioningMode = "efs-ap"
