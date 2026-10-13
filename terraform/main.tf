@@ -207,17 +207,6 @@ module "eks" {
   cluster_endpoint_private_access = true
 
   enable_irsa = true
-  # ---- NEW: allow node-to-node HTTP so the ingress controller can reach the frontend ----
-  node_security_group_additional_rules = {
-    ingress_nodes_http = {
-      description                = "Node to node HTTP (ingress controller to frontend)"
-      protocol                   = "tcp"
-      from_port                  = 80
-      to_port                    = 80
-      type                       = "ingress"
-      source_node_security_group = true
-    }
-  }
 
   eks_managed_node_groups = {
     default = {
@@ -270,6 +259,19 @@ module "eks" {
   tags = {
     Project = var.project_name
   }
+}
+
+# ============================================================
+# NODE-TO-NODE HTTP (ingress controller -> frontend on port 80)
+# ============================================================
+
+resource "aws_vpc_security_group_ingress_rule" "node_http" {
+  security_group_id            = module.eks.node_security_group_id
+  referenced_security_group_id = module.eks.node_security_group_id
+  ip_protocol                  = "tcp"
+  from_port                    = 80
+  to_port                      = 80
+  description                  = "Node to node HTTP (ingress controller to frontend)"
 }
 
 module "ebs_csi_irsa_role" {
